@@ -35,11 +35,19 @@ module ActiveSupport
         private
           # Prepare the value before passing it to the backend (e.g. calling as_json)
           def jsonify(value)
-            if short_circuit?
-              value
-            else
-              value.as_json(options.dup)
+            unless short_circuit?
+              # First call as_json with options
+              if value.respond_to?(:as_json)
+                value = value.as_json(options.dup)
+              end
+
+              # Then call as_json without options again to jsonify the value returned by the user
+              if value.respond_to?(:as_json)
+                value = value.as_json
+              end
             end
+
+            value
           end
 
           # Generate a json string from value by passing it to the backend
