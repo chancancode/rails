@@ -17,6 +17,9 @@ require 'active_support/core_ext/date/conversions'
 # and consequently classes as ActiveSupport::OrderedHash cannot be serialized to json.
 [Object, Array, FalseClass, Float, Hash, Integer, NilClass, String, TrueClass].each do |klass|
   klass.class_eval do
+    # Preserve the to_json added by JSON gem
+    alias_method :__to_json__, :to_json if method_defined? :to_json
+
     # Dumps object in JSON (JavaScript Object Notation). See www.json.org for more info.
     def to_json(options = nil)
       ActiveSupport::JSON.encode(self, options)

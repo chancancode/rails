@@ -56,7 +56,7 @@ module ActiveSupport
               if value.is_a?(BigDecimal)
                 value.to_s
               else
-                raise ArgumentError, "Don't know how to serialize #{value.inspect}"
+                value.__to_json__(options)
               end
             else
               ::JSON.generate(value, quirks_mode: true, max_nesting: false)
