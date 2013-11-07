@@ -7,6 +7,7 @@ module ActiveSupport
     delegate :use_standard_json_time_format, :use_standard_json_time_format=,
       :escape_html_entities_in_json, :escape_html_entities_in_json=,
       :encode_big_decimal_as_string, :encode_big_decimal_as_string=,
+      :default_json_encoder, :default_json_encoder=,
       :to => :'ActiveSupport::JSON::Encoding'
   end
 
@@ -17,11 +18,11 @@ module ActiveSupport
     #   ActiveSupport::JSON.encode({ team: 'rails', players: '36' })
     #   # => "{\"team\":\"rails\",\"players\":\"36\"}"
     def self.encode(value, options = nil)
-      Encoding::Encoder.new(options).encode(value)
+      Encoding.default_json_encoder.new(options).encode(value)
     end
 
     module Encoding #:nodoc:
-      class Encoder
+      class JsonGemEncoder
         attr_reader :options
 
         def initialize(options = nil)
@@ -89,6 +90,8 @@ module ActiveSupport
         attr_accessor :escape_regex
         attr_reader :escape_html_entities_in_json
 
+        attr_accessor :default_json_encoder
+
         def escape_html_entities_in_json=(value)
           self.escape_regex = \
             if @escape_html_entities_in_json = value
@@ -128,6 +131,7 @@ module ActiveSupport
       self.use_standard_json_time_format = true
       self.escape_html_entities_in_json  = true
       self.encode_big_decimal_as_string  = true
+      self.default_json_encoder = JsonGemEncoder
     end
   end
 end
