@@ -62,19 +62,11 @@ class TrueClass
   def as_json(options = nil) #:nodoc:
     self
   end
-
-  def encode_json(encoder) #:nodoc:
-    to_s
-  end
 end
 
 class FalseClass
   def as_json(options = nil) #:nodoc:
     self
-  end
-
-  def encode_json(encoder) #:nodoc:
-    to_s
   end
 end
 
@@ -82,19 +74,11 @@ class NilClass
   def as_json(options = nil) #:nodoc:
     self
   end
-
-  def encode_json(encoder) #:nodoc:
-    'null'
-  end
 end
 
 class String
   def as_json(options = nil) #:nodoc:
     self
-  end
-
-  def encode_json(encoder) #:nodoc:
-    encoder.escape(self)
   end
 end
 
@@ -107,10 +91,6 @@ end
 class Numeric
   def as_json(options = nil) #:nodoc:
     self
-  end
-
-  def encode_json(encoder) #:nodoc:
-    to_s
   end
 end
 
@@ -132,15 +112,8 @@ class BigDecimal
   # if the other end knows by contract that the data is supposed to be a
   # BigDecimal, it still has the chance to post-process the string and get the
   # real value.
-  #
-  # Use <tt>ActiveSupport.use_standard_json_big_decimal_format = true</tt> to
-  # override this behavior.
   def as_json(options = nil) #:nodoc:
-    if finite?
-      ActiveSupport.encode_big_decimal_as_string ? to_s : self
-    else
-      nil
-    end
+    finite? ? to_s : nil
   end
 end
 
@@ -166,10 +139,6 @@ class Array
   def as_json(options = nil) #:nodoc:
     map { |v| v.as_json(options && options.dup) }
   end
-
-  def encode_json(encoder) #:nodoc:
-    "[#{map { |v| v.as_json.encode_json(encoder) } * ','}]"
-  end
 end
 
 class Hash
@@ -188,10 +157,6 @@ class Hash
     end
 
     Hash[subset.map { |k, v| [k.to_s, v.as_json(options && options.dup)] }]
-  end
-
-  def encode_json(encoder) #:nodoc:
-    "{#{map { |k,v| "#{k.as_json.encode_json(encoder)}:#{v.as_json.encode_json(encoder)}" } * ','}}"
   end
 end
 
