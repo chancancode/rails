@@ -180,6 +180,17 @@ class CallbackCancellationDeveloper < ActiveRecord::Base
   after_destroy { @after_destroy_called = true }
 end
 
+class CallbackReturnDeveloper < ActiveRecord::Base
+  self.table_name = 'developers'
+
+  attr_accessor :return_mode
+
+  before_save do
+    return false if @return_mode == :return
+    break false  if @return_mode == :break
+  end
+end
+
 class CallbacksTest < ActiveRecord::TestCase
   fixtures :developers
 
@@ -435,6 +446,20 @@ class CallbacksTest < ActiveRecord::TestCase
       [ :after_initialize,            :object ],
       [ :after_initialize,            :block  ],
     ], david.history
+  end
+
+  def test_before_save_return_early_using_return
+    david = CallbackReturnDeveloper.find(1)
+    david.return_mode = :return
+    assert !david.save
+    assert_raise(ActiveRecord::RecordNotSaved) { david.save! }
+  end
+
+  def test_before_save_return_early_using_break
+    david = CallbackReturnDeveloper.find(1)
+    david.return_mode = :break
+    assert !david.save
+    assert_raise(ActiveRecord::RecordNotSaved) { david.save! }
   end
 
   def test_before_save_returning_false

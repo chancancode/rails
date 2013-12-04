@@ -11,6 +11,7 @@ class CallbacksTest < ActiveModel::TestCase
   end
 
   class ModelCallbacks
+    attr_accessor :return_mode
     attr_reader :callbacks
     extend ActiveModel::Callbacks
 
@@ -23,13 +24,15 @@ class CallbacksTest < ActiveModel::TestCase
     around_create CallbackValidator.new
 
     after_create do |model|
+      return false if @return_mode == :return
+      break false if @return_mode == :break
       model.callbacks << :after_create
     end
 
     after_create "@callbacks << :final_callback"
 
-    def initialize(valid=true)
-      @callbacks, @valid = [], valid
+    def initialize(valid=true, return_mode=nil)
+      @callbacks, @valid, @return_mode = [], valid, return_mode
     end
 
     def before_create
@@ -62,6 +65,20 @@ class CallbacksTest < ActiveModel::TestCase
     model.create
     assert_equal model.callbacks, [ :before_create, :before_around_create,
                                     :create, :after_around_create]
+  end
+
+  test "chain is halted if a callback returns false with return" do
+    model = ModelCallbacks.new(true, :return)
+    model.create
+    assert_equal model.callbacks, [ :before_create, :before_around_create, :create,
+                                :after_around_create]
+  end
+
+  test "chain is halted if a callback returns false with break" do
+    model = ModelCallbacks.new(true, :break)
+    model.create
+    assert_equal model.callbacks, [ :before_create, :before_around_create, :create,
+                                :after_around_create]
   end
 
   test "only selects which types of callbacks should be created" do

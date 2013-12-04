@@ -787,10 +787,14 @@ module CallbacksTest
   end
 
   class CallbackProcTest < ActiveSupport::TestCase
-    def build_class(callback)
+    def build_class(callback, terminator = nil)
       Class.new {
         include ActiveSupport::Callbacks
-        define_callbacks :foo
+        if terminator
+          define_callbacks :foo, terminator: terminator
+        else
+          define_callbacks :foo
+        end
         set_callback :foo, :before, callback
         def run; run_callbacks :foo; end
       }
@@ -823,6 +827,27 @@ module CallbacksTest
       klass = build_class(->(*args) { calls << args })
       klass.new.run
       assert_equal [[]], calls
+    end
+
+    def test_proc_implicit_return
+      rtn = nil
+      klass = build_class(->() { 1 }, ->(_,v) { rtn = v })
+      assert_nothing_raised { klass.new.run }
+      assert_equal 1, rtn
+    end
+
+    def test_proc_return
+      rtn = nil
+      klass = build_class(->() { return 1 }, ->(_,v) { rtn = v })
+      assert_nothing_raised { klass.new.run }
+      assert_equal 1, rtn
+    end
+
+    def test_proc_break
+      rtn = nil
+      klass = build_class(->() { break 1 }, ->(_,v) { rtn = v })
+      assert_nothing_raised { klass.new.run }
+      assert_equal 1, rtn
     end
   end
 
