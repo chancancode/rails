@@ -1,3 +1,18 @@
+*   `scope` now forbids defining a named scope that conflicts with an existing class
+    method. The following examples now cause an ArgumentError to be raised:
+
+        class Model < ActiveRecord::Base
+          scope :new, ...
+          scope :create, ...
+          scope :all, ...
+          scope :an_existing_scope, ...
+          scope :find_by_some_attribute, ...
+        end
+
+    See also #13389.
+
+    *Godfrey Chan*
+
 *   Fix presence validator for association when the associated record responds to `to_a`.
 
     *gmarik*

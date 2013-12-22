@@ -139,6 +139,12 @@ module ActiveRecord
         #   Article.published.featured.latest_article
         #   Article.featured.titles
         def scope(name, body, &block)
+          if respond_to?(name)
+            raise ArgumentError, "You tried to define a scope named \"#{name}\" " \
+              "on the model \"#{self.name}\", but it already has an existing class " \
+              "method with the same name."
+          end
+
           extension = Module.new(&block) if block
 
           singleton_class.send(:define_method, name) do |*args|

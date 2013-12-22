@@ -266,6 +266,28 @@ class NamedScopingTest < ActiveRecord::TestCase
     assert_equal 'lifo', topic.author_name
   end
 
+  def test_reserved_scope_names
+    klass = Class.new(ActiveRecord::Base) do
+      self.table_name = "topics"
+      scope :approved, -> { where(:approved => true) }
+    end
+
+    # Test against the following categories of conflicts
+    conflicts = [
+      :new,          # instance method on Class
+      :create,       # class method on AR::Base
+      :all,          # a default scope
+      :approved,     # an existing scope
+      :find_by_title # dynamic finder method
+    ]
+
+    conflicts.each do |name|
+      assert_raises(ArgumentError) do
+        klass.class_eval { scope name, ->{ where(:approved => true) } }
+      end
+    end
+  end
+
   # Method delegation for scope names which look like /\A[a-zA-Z_]\w*[!?]?\z/
   # has been done by evaluating a string with a plain def statement. For scope
   # names which contain spaces this approach doesn't work.
