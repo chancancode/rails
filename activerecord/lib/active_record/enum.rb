@@ -65,6 +65,8 @@ module ActiveRecord
     def enum(definitions)
       klass = self
       definitions.each do |name, values|
+        detect_conflicts!(name, values)
+
         # STATUS = { }
         enum_values = _enum_methods_module.const_set name.to_s.upcase, ActiveSupport::HashWithIndifferentAccess.new
         name        = name.to_sym
@@ -99,6 +101,30 @@ module ActiveRecord
     end
 
     private
+      CONFLICT_ERROR_MESSAGE = \
+        "You tried to define an enum named \"%{enum}\" with the value \"%{value}\" " \
+        "on the model \"%{klass}\", but it already has an existing %{type} method " \
+        "with the name \"%{method}\"."
+
+      # Raise an exception if a the generated methods will conflict with an existing
+      # class method (from the scope) or instance method (active? and active!)
+      def detect_conflicts!(name, values)
+        values = values.respond_to?(:keys) ? values.keys : values
+
+        values.each do |value|
+          if respond_to?(value, true) # conflict with scope :active, ...
+            raise ArgumentError, CONFLICT_ERROR_MESSAGE %
+              {klass: self.name, enum: name, value: value, method: "#{value}=", type: 'class'}
+          elsif method_defined?("#{value}?") # conflict with def active? ...
+            raise ArgumentError, CONFLICT_ERROR_MESSAGE %
+              {klass: self.name, enum: name, value: value, method: "#{value}?", type: 'instance'}
+          elsif method_defined?("#{value}!") # conflict with def active! ...
+            raise ArgumentError, CONFLICT_ERROR_MESSAGE %
+              {klass: self.name, enum: name, value: value, method: "#{value}!", type: 'instance'}
+          end
+        end
+      end
+
       def _enum_methods_module
         @_enum_methods_module ||= begin
           mod = Module.new

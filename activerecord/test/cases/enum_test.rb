@@ -87,4 +87,25 @@ class EnumTest < ActiveRecord::TestCase
     assert Issue.open.empty?
     assert Issue.open.first_or_initialize
   end
+
+  test "reserved enum values" do
+    klass = Class.new(ActiveRecord::Base) do
+      self.table_name = "books"
+      enum status: [:proposed, :written, :published]
+    end
+
+    # Test against the following categories of conflicts
+    conflicts = [
+      :new,      # generates a scope that conflicts with a class method
+      :proposed, # same value as an existing enum
+      :valid,    # generates #valid?, which conflicts with an AR method
+      :save      # generates #save!, which conflicts with an AR method
+    ]
+
+    conflicts.each do |value|
+      assert_raises(ArgumentError) do
+        klass.class_eval { enum read_status: [value] }
+      end
+    end
+  end
 end

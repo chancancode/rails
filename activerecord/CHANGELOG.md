@@ -1,3 +1,21 @@
+*   `enum` now forbids defining an enum with a value that conflicts with an existing
+    class method (from the generated scope) or instance method (from the generated
+    query and update methods). The following examples now cause an ArgumentError to
+    be raised:
+
+        class Model < ActiveRecord::Base
+          enum :good, [:existing, :enum, ...]
+
+          enum :bad1, [:existing, ...] # conflict with another enum
+          enum :bad2, [:new, ...]      # conflict with a class method
+          enum :bad3, [:valid, ...]    # conflict with valid?
+          enum :bad4, [:save, ...]     # conflict with save!
+        end
+
+     Fixes #13389.
+
+     *Godfrey Chan*
+
 *   `scope` now forbids defining a named scope that conflicts with an existing class
     method. The following examples now cause an ArgumentError to be raised:
 
