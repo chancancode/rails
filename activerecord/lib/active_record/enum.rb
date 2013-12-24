@@ -108,6 +108,9 @@ module ActiveRecord
 
       # Raise an exception if a the generated methods will conflict with an existing
       # class method (from the scope) or instance method (active? and active!)
+      # 
+      # We only check for collisions on +Base+ because we need to allow people to
+      # override the generated methods.
       def detect_conflicts!(name, values)
         values = values.respond_to?(:keys) ? values.keys : values
 
@@ -115,10 +118,10 @@ module ActiveRecord
           if respond_to?(value, true) # conflict with scope :active, ...
             raise ArgumentError, CONFLICT_ERROR_MESSAGE %
               {klass: self.name, enum: name, value: value, method: "#{value}=", type: 'class'}
-          elsif method_defined?("#{value}?") # conflict with def active? ...
+          elsif Base.method_defined?("#{value}?") # conflict with def active? ...
             raise ArgumentError, CONFLICT_ERROR_MESSAGE %
               {klass: self.name, enum: name, value: value, method: "#{value}?", type: 'instance'}
-          elsif method_defined?("#{value}!") # conflict with def active! ...
+          elsif Base.method_defined?("#{value}!") # conflict with def active! ...
             raise ArgumentError, CONFLICT_ERROR_MESSAGE %
               {klass: self.name, enum: name, value: value, method: "#{value}!", type: 'instance'}
           end

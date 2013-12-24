@@ -108,4 +108,19 @@ class EnumTest < ActiveRecord::TestCase
       end
     end
   end
+
+  test "overriding enum method does not raise" do
+    assert_nothing_raised do
+      klass = Class.new(ActiveRecord::Base) do
+        self.table_name = "books"
+
+        def published!
+          super
+          "do publish work..."
+        end
+
+        enum status: [:proposed, :written, :published]
+      end
+    end
+  end
 end
