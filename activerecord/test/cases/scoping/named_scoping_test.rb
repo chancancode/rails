@@ -270,17 +270,31 @@ class NamedScopingTest < ActiveRecord::TestCase
     klass = Class.new(ActiveRecord::Base) do
       self.table_name = "topics"
       scope :approved, -> { where(:approved => true) }
+
+      class << self
+        public
+          def pub; end
+
+        private
+          def pri; end
+
+        protected
+          def pro; end
+      end
     end
 
     subklass = Class.new(klass)
 
     # Test against the following categories of conflicts
     conflicts = [
-      :new,          # instance method on Class
-      :create,       # class method on AR::Base
-      :all,          # a default scope
-      :approved,     # an existing scope
-      :find_by_title # dynamic finder method
+      :new,           # instance method on Class
+      :create,        # class method on AR::Base
+      :all,           # a default scope
+      :approved,      # an existing scope
+      :find_by_title, # dynamic finder method
+      :pub,           # existing public class method
+      :pri,           # existing private class method
+      :pro            # existing protected class method
     ]
 
     conflicts.each do |name|
