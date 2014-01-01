@@ -272,6 +272,8 @@ class NamedScopingTest < ActiveRecord::TestCase
       scope :approved, -> { where(:approved => true) }
     end
 
+    subklass = Class.new(klass)
+
     # Test against the following categories of conflicts
     conflicts = [
       :new,          # instance method on Class
@@ -284,6 +286,10 @@ class NamedScopingTest < ActiveRecord::TestCase
     conflicts.each do |name|
       assert_raises(ArgumentError) do
         klass.class_eval { scope name, ->{ where(:approved => true) } }
+      end
+
+      assert_raises(ArgumentError) do
+        subklass.class_eval { scope name, ->{ where(:approved => true) } }
       end
     end
   end
