@@ -54,23 +54,30 @@ module ActiveRecord
   # remove unused values, the explicit +Hash+ syntax should be used.
   #
   # In rare circumstances you might need to access the mapping directly.
-  # The mappings are exposed through a constant with the attributes name:
+  # The mappings are exposed through a class method with the pluralized attributes
+  # name:
   #
-  #   Conversation::STATUS # => { "active" => 0, "archived" => 1 }
+  #   Conversation.statuses # => { "active" => 0, "archived" => 1 }
   #
-  # Use that constant when you need to know the ordinal value of an enum:
+  # Use that class method when you need to know the ordinal value of an enum:
   #
-  #   Conversation.where("status <> ?", Conversation::STATUS[:archived])
+  #   Conversation.where("status <> ?", Conversation.statuses[:archived])
   module Enum
     def enum(definitions)
       klass = self
       definitions.each do |name, values|
-        # STATUS = { }
         enum_values = _enum_methods_module.const_set name.to_s.upcase, ActiveSupport::HashWithIndifferentAccess.new
         name        = name.to_sym
 
+        _enum_methods_module::ClassMethods.module_eval do
+          # def Conversation.statuses enum_values end
+          define_method(name.to_s.pluralize) do
+            enum_values
+          end
+        end
+
         _enum_methods_module.module_eval do
-          # def status=(value) self[:status] = STATUS[value] end
+          # def status=(value) self[:status] = Conversation.statuses[value] end
           define_method("#{name}=") { |value|
             if enum_values.has_key?(value)|| value.blank?
               self[name] = enum_values[value]
@@ -84,7 +91,7 @@ module ActiveRecord
             end
           }
 
-          # def status() STATUS.key self[:status] end
+          # def status() Conversation.statuses.key self[:status] end
           define_method(name) { enum_values.key self[name] }
 
           pairs = values.respond_to?(:each_pair) ? values.each_pair : values.each_with_index
@@ -107,7 +114,10 @@ module ActiveRecord
     private
       def _enum_methods_module
         @_enum_methods_module ||= begin
-          mod = Module.new
+          mod = Module.new do
+            extend ActiveSupport::Concern
+            const_set :ClassMethods, Module.new
+          end
           include mod
           mod
         end
